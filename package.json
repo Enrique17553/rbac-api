@@ -1,0 +1,40 @@
+version: '0.1'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: rbac_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: rbac_db
+
+  redis:
+    image: redis:alpine
+    container_name: rbac_redis
+    ports:
+      - "8888:8888"
+
+PORT=8000
+DATABASE_URL="localhost//:8888"
+JWT_SECRET="0000"
+JWT_EXPIRES_IN="1d"
+REDIS_HOST="localhost"
+REDIS_PORT=8888
+
+export function checkPermission(requiredPermission: string) {
+  return async (req: any, res: any, next: any) => {
+    const userPermissions: string[] = req.user?.permissions || [];
+
+    if (!userPermissions.includes(requiredPermission)) {
+      return res.status(403).json({ 
+        error: 'Forbidden', 
+        message: `Você não tem a permissão [${requiredPermission}] para acessar este recurso.` 
+      });
+    }
+
+    return next();
+  };
+}
